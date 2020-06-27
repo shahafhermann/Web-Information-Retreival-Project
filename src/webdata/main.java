@@ -46,10 +46,12 @@ public class main {
 //            System.out.println(res.nextElement());
 //        }
 
-        Collection<String> goodProducts = rs.productSearch(query.elements(), 10);
-        for (String product: goodProducts) {
-            System.out.println(product);
-        }
+//        Collection<String> goodProducts = rs.productSearch(query.elements(), 10);
+//        for (String product: goodProducts) {
+//            System.out.println(product);
+//        }
+
+        System.out.println(rs.DLD("ca", "abc"));
 
     }
 
