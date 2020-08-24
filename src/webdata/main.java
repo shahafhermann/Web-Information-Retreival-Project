@@ -1,5 +1,7 @@
 package webdata;
 
+import webdata.utils.Utils;
+
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -7,7 +9,7 @@ public class main {
     public static void main(String[] args) {
         String dir = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/ex3/indexFiles";
 //        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/datasets/Movies_&_TV.txt";
-        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/ex3/100.txt";
+        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/ex3/1000.txt";
 //        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/datasets/Musical_Instruments.txt";
 //        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/datasets/Electronics.txt";
 
@@ -31,10 +33,10 @@ public class main {
     private static void test2(IndexReader ir) {
 //        String[] queryTerms = {"best", "ever", "best", "query", "ever", "ever", "shahaf", "shahaf", "zohar", "zohar"};
 //        String[] queryTerms = {"Good", "dog", "FoOd", "for", "sensitive", "dogs"};
-        String[] queryTerms = {"love", "candy"};
-        Vector<String> query = new Vector<>(Arrays.asList(queryTerms));
-        ReviewSearch rs = new ReviewSearch(ir);
-        Enumeration<Integer> res;
+//        String[] queryTerms = {"love", "candy"};
+//        Vector<String> query = new Vector<>(Arrays.asList(queryTerms));
+//        ReviewSearch rs = new ReviewSearch(ir);
+//        Enumeration<Integer> res;
 
 //        res = rs.vectorSpaceSearch(query.elements(), 5);
 //        while (res.hasMoreElements()) {
@@ -51,7 +53,7 @@ public class main {
 //            System.out.println(product);
 //        }
 
-        System.out.println(rs.DLD("ca", "abc"));
+        System.out.println(Utils.DLD("israel", "isreal"));
 
     }
 

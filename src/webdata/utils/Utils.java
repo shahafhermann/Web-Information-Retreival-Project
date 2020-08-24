@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 
 /**
@@ -110,5 +111,86 @@ public final class Utils {
             ++i;
         }
         return result;
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // **                        Damerau-Levenshtein Edit Distance Algorithm                           ** //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Compute the Damerau-Levenshtein distance between the specified source
+     * string and the specified target string.
+     * @param s1 First String
+     * @param s2 Second String
+     * @return
+     */
+    public static int DLD(String s1, String s2) {
+        if (s1 == null || s2 == null) {  // Invalid input
+            return -1;
+        }
+
+        if (s1.equals(s2)) {  // No distancd to compute
+            return 0;
+        }
+
+        // The max possible distance
+        int inf = s1.length() + s2.length();
+
+        // Create and initialize the character array indices
+        HashMap<Character, Integer> da = new HashMap<>();
+        for (int i = 0; i < s1.length(); ++i) {
+            da.put(s1.charAt(i), 0);
+        }
+        for (int j = 0; j < s2.length(); ++j) {
+            da.put(s2.charAt(j), 0);
+        }
+
+        // Create the distance matrix H[0 .. s1.length+1][0 .. s2.length+1]
+        int[][] distances = new int[s1.length() + 2][s2.length() + 2];
+
+        // initialize the left and top edges of H
+        for (int i = 0; i <= s1.length(); ++i) {
+            distances[i + 1][0] = inf;
+            distances[i + 1][1] = i;
+        }
+
+        for (int j = 0; j <= s2.length(); ++j) {
+            distances[0][j + 1] = inf;
+            distances[1][j + 1] = j;
+
+        }
+
+        // fill in the distance matrix H
+        // look at each character in s1
+        for (int i = 1; i <= s1.length(); ++i) {
+            int db = 0;
+
+            // look at each character in b
+            for (int j = 1; j <= s2.length(); ++j) {
+                int i1 = da.get(s2.charAt(j - 1));
+                int j1 = db;
+
+                int cost = 1;
+                if (s1.charAt(i - 1) == s2.charAt(j - 1)) {
+                    cost = 0;
+                    db = j;
+                }
+
+                distances[i + 1][j + 1] = min(
+                        distances[i][j] + cost, // substitution
+                        distances[i + 1][j] + 1, // insertion
+                        distances[i][j + 1] + 1, // deletion
+                        distances[i1][j1] + (i - i1 - 1) + 1 + (j - j1 - 1));
+            }
+
+            da.put(s1.charAt(i - 1), i);
+        }
+
+        return distances[s1.length() + 1][s2.length() + 1];
+    }
+
+    private static int min(final int a, final int b, final int c, final int d) {
+        return Math.min(a, Math.min(b, Math.min(c, d)));
     }
 }
