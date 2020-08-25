@@ -44,44 +44,23 @@ public class IndexReader {
     // ------------------------------------------------------------ //
 
     /**
-     * Find all term numbers that have at least 'threshold' ngrams in common with term.
-     * @param term The term to find common ngrams with.
-     * @param threshold Minimum number of allowed common ngrams (in percentage: [0,1]).
+     * Find all term numbers that have ngrams in common with term.
+     * @param ngrams String array of ngrams to find common terms with.
      * @param isProduct Indicate if this method should refer to the product or token index.
-     * @return An ArrayList of the term numbers with more than threshold common ngrams.
+     * @return A set of the term numbers with common ngrams.
      */
-    public ArrayList<Integer> findTermsWithCommonNgrams(String term, double threshold, boolean isProduct) {
-        // Find n-grams for term
-        String[] ngrams = (isProduct) ?
-                                        Utils.findNGrams(productNGI.getN(), NGramIndex.EDGE_MARK, term) :
-                                        Utils.findNGrams(tokenNGI.getN(), NGramIndex.EDGE_MARK, term);
-
-        TreeMap<Integer, Integer> termsAmounts = new TreeMap<>();  // {term number : common "grams"}
+    public Set<Integer> findTermsWithCommonNgrams(String[] ngrams, boolean isProduct) {
+        Set<Integer> allTerms = new HashSet<>();
 
         // For each "gram", get the list of other terms that contain this "gram"
         for (String gram : ngrams) {
             ArrayList<Integer> commonTerms = (isProduct) ?
                                                             productNGI.getNGrams(gram) :
                                                             tokenNGI.getNGrams(gram);
-
-            // For each term number on the list, count how many ngrams it has in common with our term
-            for (int termNum : commonTerms) {
-                int curAmount = termsAmounts.getOrDefault(termNum, 0);
-                curAmount += 1;
-                termsAmounts.put(termNum, curAmount);
-            }
+            allTerms.addAll(commonTerms);
         }
 
-        // Extract the term numbers that have more than 'threshold'% common ngrams with our term
-        ArrayList<Integer> bestCommon = new ArrayList<>();
-        for (int termNum : termsAmounts.keySet()) {
-            if (termsAmounts.get(termNum) >= (threshold * ngrams.length)) {
-                bestCommon.add(termNum);
-            }
-        }
-
-        return bestCommon;
-
+        return allTerms;
     }
 
     /**

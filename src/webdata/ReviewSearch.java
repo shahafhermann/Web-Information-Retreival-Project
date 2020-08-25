@@ -1,6 +1,7 @@
 package webdata;
 
 import com.sun.source.tree.Tree;
+import jdk.jshell.execution.Util;
 import webdata.utils.ProductWithScore;
 import webdata.utils.ReviewWithScore;
 import webdata.utils.Utils;
@@ -10,7 +11,7 @@ import java.util.*;
 public class ReviewSearch {
 
     private static final int C = 30;
-    private static final double NGRAM_THRESHOLD = 0.5;  // Should be in range [0,1]
+    private static final double JACCARD_THRESHOLD = 0.4;  // Should be in range [0,1]
 
     private IndexReader ir;
 
@@ -114,6 +115,9 @@ public class ReviewSearch {
      * The list should be sorted by the ranking
      */
     public Enumeration<Integer> vectorSpaceSearch(Enumeration<String> query, int k) {
+        // todo: add spell correction
+
+
         // Compute qqq:
         TreeMap<String, Integer> queryHist = histogramQuery(query);
         double[] ltc = computeLTCOfQuery(queryHist);
@@ -193,6 +197,9 @@ public class ReviewSearch {
      * The list should be sorted by the ranking
      */
     public Enumeration<Integer> languageModelSearch(Enumeration<String> query, double lambda, int k) {
+        // todo: add spell correction
+
+
         ArrayList<String> queryList = new ArrayList<>();
         while (query.hasMoreElements()) {
             queryList.add(query.nextElement().toLowerCase());
@@ -351,19 +358,41 @@ public class ReviewSearch {
     }
 
     private String findSpellingCorrection(String term, boolean isProduct) {
-        // Get all terms numbers with at least 'NGRAM_THRESHOLD'% common ngrams. Default is 0.5.
-        ArrayList<Integer> commonTermsIds = ir.findTermsWithCommonNgrams(term, NGRAM_THRESHOLD, isProduct);
-        String[] commonTerms = new String[commonTermsIds.size()];
+        // Find n-grams for term
+        String[] ngrams = (isProduct) ?
+                                        Utils.findNGrams(ir.productNGI.getN(), NGramIndex.EDGE_MARK, term) :
+                                        Utils.findNGrams(ir.tokenNGI.getN(), NGramIndex.EDGE_MARK, term);
+
+        // Get all term numbers with common ngrams.
+        Set<Integer> commonTermsIds = ir.findTermsWithCommonNgrams(ngrams, isProduct);
 
         // Get the actual terms that correspond with the id
-        for (int i = 0; i < commonTerms.length; ++i) {
-            commonTerms[i] = ir.getTermById(commonTermsIds.get(i), isProduct);
+        String[] commonTerms = new String[commonTermsIds.size()];
+        int i = 0;
+        for (int termId : commonTermsIds) {
+            commonTerms[i] = ir.getTermById(termId, isProduct);
+            ++i;
+        }
+
+        // Calculate the Jaccard Coefficient for each of the above terms, and keep only those above 'JACCARD_THRESHOLD'
+        ArrayList<String> jaccardTerms = new ArrayList<>();
+        for (String cur : commonTerms) {
+            String[] curNgrams = (isProduct) ?
+                                                Utils.findNGrams(ir.productNGI.getN(), NGramIndex.EDGE_MARK, cur) :
+                                                Utils.findNGrams(ir.tokenNGI.getN(), NGramIndex.EDGE_MARK, cur);
+
+            double jaccardCoef = (double) Utils.intersectSizeStringArrays(ngrams, curNgrams) /
+                                                                    Utils.unionSizeStringArrays(ngrams, curNgrams);
+
+            if (jaccardCoef > JACCARD_THRESHOLD) {
+                jaccardTerms.add(cur);
+            }
         }
 
         // Find the term(s) with the lowest Damerau-Levenshtein edit distance.
         String bestCorrection = term;
         int minDLD = Integer.MAX_VALUE;
-        for (String cur : commonTerms) {
+        for (String cur : jaccardTerms) {
             int curDLD = Utils.DLD(term, cur);
             if (curDLD < minDLD) {
                 minDLD = curDLD;

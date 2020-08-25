@@ -4,10 +4,7 @@ import webdata.NGramIndex;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 
 /**
  * Static class for utility methods
@@ -222,5 +219,31 @@ public final class Utils {
         }
 
         return ngrams;
+    }
+
+    /**
+     * Return the union size of 2 String arrays
+     * @param a first array
+     * @param b second array
+     * @return Array union size
+     */
+    public static int unionSizeStringArrays(String[] a, String[] b) {
+        Set<String> setA = new HashSet<>(Arrays.asList(a));
+        Set<String> setB = new HashSet<>(Arrays.asList(b));
+        setA.addAll(setB);
+        return setA.size();
+    }
+
+    /**
+     * Return the intersection size of 2 String arrays
+     * @param a first array
+     * @param b second array
+     * @return Array intersection size
+     */
+    public static int intersectSizeStringArrays(String[] a, String[] b) {
+        Set<String> setA = new HashSet<>(Arrays.asList(a));
+        Set<String> setB = new HashSet<>(Arrays.asList(b));
+        setA.retainAll(setB);
+        return setA.size();
     }
 }

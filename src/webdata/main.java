@@ -43,28 +43,25 @@ public class main {
     private static void test2(IndexReader ir) {
 //        String[] queryTerms = {"best", "ever", "best", "query", "ever", "ever", "shahaf", "shahaf", "zohar", "zohar"};
 //        String[] queryTerms = {"Good", "dog", "FoOd", "for", "sensitive", "dogs"};
-//        String[] queryTerms = {"love", "candy"};
-//        Vector<String> query = new Vector<>(Arrays.asList(queryTerms));
-//        ReviewSearch rs = new ReviewSearch(ir);
-//        Enumeration<Integer> res;
+        String[] queryTerms = {"love", "candy"};
+        Vector<String> query = new Vector<>(Arrays.asList(queryTerms));
+        ReviewSearch rs = new ReviewSearch(ir);
+        Enumeration<Integer> res;
 
-//        res = rs.vectorSpaceSearch(query.elements(), 5);
-//        while (res.hasMoreElements()) {
-//            System.out.println(res.nextElement());
-//        }
-//
-//        res = rs.languageModelSearch(query.elements(), 0.25, 5);
-//        while (res.hasMoreElements()) {
-//            System.out.println(res.nextElement());
-//        }
+        res = rs.vectorSpaceSearch(query.elements(), 5);
+        while (res.hasMoreElements()) {
+            System.out.println(res.nextElement());
+        }
 
-//        Collection<String> goodProducts = rs.productSearch(query.elements(), 10);
-//        for (String product: goodProducts) {
-//            System.out.println(product);
-//        }
+        res = rs.languageModelSearch(query.elements(), 0.25, 5);
+        while (res.hasMoreElements()) {
+            System.out.println(res.nextElement());
+        }
 
-        System.out.println(Utils.DLD("israel", "isreal"));
-
+        Collection<String> goodProducts = rs.productSearch(query.elements(), 10);
+        for (String product: goodProducts) {
+            System.out.println(product);
+        }
     }
 
     private static void test1(IndexReader ir) {
