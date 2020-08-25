@@ -259,6 +259,45 @@ public class Dictionary implements Serializable {
         return (short)minLength;
     }
 
+
+    /**
+     * Given a term number, find it in the concatStr and return it
+     * @param i Term number in the arrays
+     * @return The term corresponding with given i. Returns null if none found.
+     */
+    String searchTerm(int i) {
+        int basePtr = termPtr[i / K];
+        int left = (i / K) * K;  // This is the first word in the block
+        int right = (((i / K) == termPtr.length - 1) && (numOfTerms - left < K)) ? numOfTerms : left + K;
+
+        String prevTerm = concatStr.substring(basePtr, basePtr + length[left]);
+
+        // This is the first word in the block so return it
+        if (i % K == 0) {
+            return prevTerm;
+        }
+
+        // Otherwise, we'll have to look for it
+        basePtr += length[left];
+        ++left;
+
+        while (left < right) {
+            String curr = concatStr.substring(basePtr, basePtr + length[left] - prefixSize[left]);
+            String prefix = prevTerm.substring(0, prefixSize[left]);
+            curr = prefix.concat(curr);
+            if (left == i) {
+                return curr;
+            }
+
+            prevTerm = curr;
+            basePtr += length[left] - prefixSize[left];
+            ++left;
+        }
+
+        return null;
+    }
+
+
     /**
      * Search for a term in the dictionary
      * @param term The term to search

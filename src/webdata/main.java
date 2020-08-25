@@ -7,9 +7,9 @@ import java.util.*;
 
 public class main {
     public static void main(String[] args) {
-        String dir = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/ex3/indexFiles";
+        String dir = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/Project/indexFiles";
 //        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/datasets/Movies_&_TV.txt";
-        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/ex3/1000.txt";
+        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/Project/1000.txt";
 //        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/datasets/Musical_Instruments.txt";
 //        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/datasets/Electronics.txt";
 
@@ -20,14 +20,24 @@ public class main {
 
 //        test1(ir);
         test2(ir);
+//        test3(ir);
 
-        siw.removeIndex(dir);
+//        siw.removeIndex(dir);
 
     }
 
     private static void takeTime(String msg) {
         String timeStamp =  new SimpleDateFormat("HH.mm.ss.SS").format(new java.util.Date());
         System.err.println(msg + " at " + timeStamp);
+    }
+
+    private static void test3(IndexReader ir) {
+//        System.out.println(ir.tokenDict.mapping.get(1) + " , " + ir.tokenDict.searchTerm(1));
+//        System.out.println(ir.tokenDict.mapping.get(4) + " , " + ir.tokenDict.searchTerm(4));
+//        System.out.println(ir.tokenDict.mapping.get(59) + " , " + ir.tokenDict.searchTerm(59));
+//        System.out.println(ir.tokenDict.mapping.get(120) + " , " + ir.tokenDict.searchTerm(120));
+
+
     }
 
     private static void test2(IndexReader ir) {
@@ -59,15 +69,15 @@ public class main {
 
     private static void test1(IndexReader ir) {
         System.err.println("\n\n--------- Started TEST ---------\n\n");
-//        int[] vals = {-1, 0, 1, 1000, 99, 10001, 2000000, 8000000, 7850072, 7850073, 7850071};
-//        for (int val: vals) {
-//            System.out.println("Value: " + val);
-//            System.out.println(ir.getProductId(val));
-//            System.out.println(ir.getReviewScore(val));
-//            System.out.println(ir.getReviewHelpfulnessNumerator(val));
-//            System.out.println(ir.getReviewHelpfulnessDenominator(val));
-//            System.out.println(ir.getReviewLength(val));
-//        }
+        int[] vals = {-1, 0, 1, 1000, 99, 10001, 2000000, 8000000, 7850072, 7850073, 7850071};
+        for (int val: vals) {
+            System.out.println("Value: " + val);
+            System.out.println(ir.getProductId(val));
+            System.out.println(ir.getReviewScore(val));
+            System.out.println(ir.getReviewHelpfulnessNumerator(val));
+            System.out.println(ir.getReviewHelpfulnessDenominator(val));
+            System.out.println(ir.getReviewLength(val));
+        }
 
         /* ****/
         String[] svals = {"spill" , "wistful", "peaceful" , "cough" ,	"crooked" , "special", 	"used" ,
@@ -125,11 +135,7 @@ public class main {
 
 }
 
-//import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
-//import webdata.IndexReader;
-//import webdata.SlowIndexWriter;
-//
-//import java.io.*;
+//import java.io.File;
 //import java.util.Enumeration;
 //
 //public class main {
@@ -230,13 +236,13 @@ public class main {
 //
 //
 //    private static void deleteIndex(String indicesDir) {
-//        SlowIndexWriter slowIndexWriter = new SlowIndexWriter();
+//        IndexWriter slowIndexWriter = new IndexWriter();
 //        slowIndexWriter.removeIndex(indicesDir);
 //    }
 //
 //    private static void buildIndex(String indicesDir) {
 //
-//        SlowIndexWriter slowIndexWriter = new SlowIndexWriter();
-//        slowIndexWriter.slowWrite(REVIEWS_FILE_NAME_1000, indicesDir);
+//        IndexWriter slowIndexWriter = new IndexWriter();
+//        slowIndexWriter.write(REVIEWS_FILE_NAME_1000, indicesDir);
 //    }
 //}

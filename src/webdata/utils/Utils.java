@@ -1,5 +1,7 @@
 package webdata.utils;
 
+import webdata.NGramIndex;
+
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -190,7 +192,35 @@ public final class Utils {
         return distances[s1.length() + 1][s2.length() + 1];
     }
 
-    private static int min(final int a, final int b, final int c, final int d) {
+    /**
+     * Find the minimum of 4 values
+     * @param a value 1
+     * @param b value 2
+     * @param c value 3
+     * @param d value 4
+     * @return The minimum
+     */
+    public static int min(final int a, final int b, final int c, final int d) {
         return Math.min(a, Math.min(b, Math.min(c, d)));
+    }
+
+    /**
+     * Find all N-grams for the given term.
+     * @param N -gram
+     * @param edgeMark Marker for the edge of the word.
+     * @param term The term to find n-grams for
+     * @return
+     */
+    public static String[] findNGrams(int N, String edgeMark, String term) {
+        // Create the n-grams array with size as the possible amount of n-grams for this term length.
+        String[] ngrams = new String[term.length() + 2 - (N - 1)];
+
+        // Make the term of the form $term$ (if edgeMark = "$").
+        String newTerm = edgeMark.concat(term).concat(edgeMark);
+        for (int j = 0; j < newTerm.length() - N; ++j) {
+            ngrams[j] = newTerm.substring(j, j + N);
+        }
+
+        return ngrams;
     }
 }

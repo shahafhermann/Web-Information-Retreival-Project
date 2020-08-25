@@ -14,6 +14,8 @@ public class IndexWriter{
     static final String tokenDictFileName = "tokenDict";
     static final String productDictFileName = "productDict";
     static final String reviewDataFileName = "reviewData";
+    static final String tokenNGIFileName = "tokenNGI";
+    static final String productNGIFileName = "productNGI";
     static final String productPostingListFileName = "productPostingList";
     static final String tokenPostingListFileName = "tokenPostingList";
     private final String tokensFileName = "tokenFile";
@@ -76,15 +78,22 @@ public class IndexWriter{
         Dictionary productDict = buildDictionary(parser.getNumOfproducts(), sortedProductsFilePath,
                 true, dir, sorter.getProductIdsArray());
 
-        try {
-            /* Write the new files */
-            ObjectOutputStream tokenDictWriter = new ObjectOutputStream(new FileOutputStream(dir + File.separator + tokenDictFileName));
-            tokenDictWriter.writeObject(tokenDict);
-            tokenDictWriter.close();
+        writeObject(dir, tokenDictFileName, tokenDict);
+        writeObject(dir, productDictFileName, productDict);
 
-            ObjectOutputStream productDictWriter = new ObjectOutputStream(new FileOutputStream(dir + File.separator + productDictFileName));
-            productDictWriter.writeObject(productDict);
-            productDictWriter.close();
+        NGramIndex tokenNGI = new NGramIndex(sorter.getTokensArray());
+        NGramIndex productNGI = new NGramIndex(sorter.getProductIdsArray());
+
+        writeObject(dir, tokenNGIFileName, tokenNGI);
+        writeObject(dir, productNGIFileName, productNGI);
+    }
+
+    private void writeObject(String dir, String fileName, Object o) {
+        try {
+            ObjectOutputStream writer = new ObjectOutputStream(new FileOutputStream(dir + File.separator + fileName));
+            writer.writeObject(o);
+            writer.close();
+
         } catch(IOException e) {
             System.err.println(e.getMessage());
             System.exit(1);

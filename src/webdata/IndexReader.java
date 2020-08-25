@@ -1,40 +1,100 @@
 package webdata;
 
+import webdata.utils.Utils;
+
 import java.io.*;
 import java.rmi.server.ExportException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.Vector;
+import java.util.*;
 
 public class IndexReader {
 
     Dictionary tokenDict;
     Dictionary productDict;
     ReviewData rd;
+    NGramIndex tokenNGI;
+    NGramIndex productNGI;
 
     /**
      * Creates an IndexReader which will read from the given directory
      * @param dir The directory to read from.
      */
     public IndexReader(String dir) {
+        tokenDict = (Dictionary) readObject(dir, IndexWriter.tokenDictFileName);
+        productDict = (Dictionary) readObject(dir, IndexWriter.productDictFileName);
+        rd = (ReviewData) readObject(dir, IndexWriter.reviewDataFileName);
+        tokenNGI = (NGramIndex) readObject(dir, IndexWriter.tokenNGIFileName);
+        productNGI = (NGramIndex) readObject(dir, IndexWriter.productNGIFileName);
+    }
+
+    private Object readObject(String dir, String fileName) {
         try {
-            ObjectInputStream tokenDictReader = new ObjectInputStream(new FileInputStream(dir + File.separator + IndexWriter.tokenDictFileName));
-            tokenDict = (Dictionary) tokenDictReader.readObject();
-            tokenDictReader.close();
+            ObjectInputStream reader = new ObjectInputStream(new FileInputStream(dir + File.separator + fileName));
+            Object o = reader.readObject();
+            reader.close();
+            return o;
 
-            ObjectInputStream productDictReader = new ObjectInputStream(new FileInputStream(dir + File.separator + IndexWriter.productDictFileName));
-            productDict = (Dictionary) productDictReader.readObject();
-            productDictReader.close();
-
-            ObjectInputStream reviewDataReader = new ObjectInputStream(new FileInputStream(dir + File.separator + IndexWriter.reviewDataFileName));
-            rd = (ReviewData) reviewDataReader.readObject();
-            reviewDataReader.close();
         } catch(IOException|ClassNotFoundException e) {
             System.err.println(e.getMessage());
             System.exit(1);
         }
+        return null;  // We'll never reach this
     }
+
+    // ------------------------------------------------------------ //
+
+    /**
+     * Find all term numbers that have at least 'threshold' ngrams in common with term.
+     * @param term The term to find common ngrams with.
+     * @param threshold Minimum number of allowed common ngrams (in percentage: [0,1]).
+     * @param isProduct Indicate if this method should refer to the product or token index.
+     * @return An ArrayList of the term numbers with more than threshold common ngrams.
+     */
+    public ArrayList<Integer> findTermsWithCommonNgrams(String term, double threshold, boolean isProduct) {
+        // Find n-grams for term
+        String[] ngrams = (isProduct) ?
+                                        Utils.findNGrams(productNGI.getN(), NGramIndex.EDGE_MARK, term) :
+                                        Utils.findNGrams(tokenNGI.getN(), NGramIndex.EDGE_MARK, term);
+
+        TreeMap<Integer, Integer> termsAmounts = new TreeMap<>();  // {term number : common "grams"}
+
+        // For each "gram", get the list of other terms that contain this "gram"
+        for (String gram : ngrams) {
+            ArrayList<Integer> commonTerms = (isProduct) ?
+                                                            productNGI.getNGrams(gram) :
+                                                            tokenNGI.getNGrams(gram);
+
+            // For each term number on the list, count how many ngrams it has in common with our term
+            for (int termNum : commonTerms) {
+                int curAmount = termsAmounts.getOrDefault(termNum, 0);
+                curAmount += 1;
+                termsAmounts.put(termNum, curAmount);
+            }
+        }
+
+        // Extract the term numbers that have more than 'threshold'% common ngrams with our term
+        ArrayList<Integer> bestCommon = new ArrayList<>();
+        for (int termNum : termsAmounts.keySet()) {
+            if (termsAmounts.get(termNum) >= (threshold * ngrams.length)) {
+                bestCommon.add(termNum);
+            }
+        }
+
+        return bestCommon;
+
+    }
+
+    /**
+     * Find the term corresponding with the given id.
+     * @param id The term's number
+     * @param isProduct Indicate if this method should refer to the product or token dictionary.
+     * @return The term corresponding with the id.
+     */
+    public String getTermById(int id, boolean isProduct) {
+        return (isProduct) ? productDict.searchTerm(id) : tokenDict.searchTerm(id);
+    }
+
+    // ------------------------------------------------------------ //
 
     /**
      * @param reviewId The review to get the product id for.

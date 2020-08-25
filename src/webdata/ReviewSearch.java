@@ -10,6 +10,8 @@ import java.util.*;
 public class ReviewSearch {
 
     private static final int C = 30;
+    private static final double NGRAM_THRESHOLD = 0.5;  // Should be in range [0,1]
+
     private IndexReader ir;
 
     private final int deleteCost = 1;
@@ -334,5 +336,42 @@ public class ReviewSearch {
         }
 
         return bestResults;
+    }
+
+    /* ------------------------------------ Spell Correction ---------------------------------------- */
+
+    /**
+     * Check the spelling for  the given term.
+     * A term is considered to have a spelling error if it doesn't exist in the index.
+     * @param term The term to check spelling for.
+     */
+    private boolean validSpelling(String term) {
+        int valid = ir.getTokenFrequency(term);
+        return valid != 0;
+    }
+
+    private String findSpellingCorrection(String term, boolean isProduct) {
+        // Get all terms numbers with at least 'NGRAM_THRESHOLD'% common ngrams. Default is 0.5.
+        ArrayList<Integer> commonTermsIds = ir.findTermsWithCommonNgrams(term, NGRAM_THRESHOLD, isProduct);
+        String[] commonTerms = new String[commonTermsIds.size()];
+
+        // Get the actual terms that correspond with the id
+        for (int i = 0; i < commonTerms.length; ++i) {
+            commonTerms[i] = ir.getTermById(commonTermsIds.get(i), isProduct);
+        }
+
+        // Find the term(s) with the lowest Damerau-Levenshtein edit distance.
+        String bestCorrection = term;
+        int minDLD = Integer.MAX_VALUE;
+        for (String cur : commonTerms) {
+            int curDLD = Utils.DLD(term, cur);
+            if (curDLD < minDLD) {
+                minDLD = curDLD;
+                bestCorrection = cur;
+            }
+        }
+
+        // todo: Choose which one to return by search history.
+        return bestCorrection;
     }
 }
