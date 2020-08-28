@@ -1,9 +1,10 @@
 package webdata;
 
+import webdata.utils.LetterProbability;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 /**
@@ -18,6 +19,8 @@ public class IndexWriter{
     static final String productNGIFileName = "productNGI";
     static final String productPostingListFileName = "productPostingList";
     static final String tokenPostingListFileName = "tokenPostingList";
+    static final String tokenLetterProbabilityFileName = "tokenLetterProbabilities";
+    static final String productLetterProbabilityFileName = "productLetterProbabilities";
     private final String tokensFileName = "tokenFile";
     private final String productsFileName = "productFile";
     private final String sortedIndicator = "_sorted";
@@ -86,6 +89,11 @@ public class IndexWriter{
 
         writeObject(dir, tokenNGIFileName, tokenNGI);
         writeObject(dir, productNGIFileName, productNGI);
+
+        LetterProbability tokenLp = new LetterProbability(sorter.getTokensArray());
+        LetterProbability productLp = new LetterProbability(sorter.getProductIdsArray());
+        writeObject(dir, tokenLetterProbabilityFileName, tokenLp);
+        writeObject(dir, productLetterProbabilityFileName, productLp);
     }
 
     private void writeObject(String dir, String fileName, Object o) {

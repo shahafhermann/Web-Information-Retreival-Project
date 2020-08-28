@@ -2,9 +2,7 @@ package webdata;
 
 import com.sun.source.tree.Tree;
 import jdk.jshell.execution.Util;
-import webdata.utils.ProductWithScore;
-import webdata.utils.ReviewWithScore;
-import webdata.utils.Utils;
+import webdata.utils.*;
 
 import java.util.*;
 
@@ -357,16 +355,13 @@ public class ReviewSearch {
         return valid != 0;
     }
 
-    private String findSpellingCorrection(String term, boolean isProduct) {
-        // Find n-grams for term
-        String[] ngrams = (isProduct) ?
-                                        Utils.findNGrams(ir.productNGI.getN(), NGramIndex.EDGE_MARK, term) :
-                                        Utils.findNGrams(ir.tokenNGI.getN(), NGramIndex.EDGE_MARK, term);
-
-        // Get all term numbers with common ngrams.
-        Set<Integer> commonTermsIds = ir.findTermsWithCommonNgrams(ngrams, isProduct);
-
-        // Get the actual terms that correspond with the id
+    /**
+     * Get the actual terms that correspond with the id
+     * @param commonTermsIds Set of the term Ids to get
+     * @param isProduct Indicate if this method should refer to the product or token index.
+     * @return A String array of the terms
+     */
+    private String[] getTermsFromIds(Set<Integer> commonTermsIds, boolean isProduct) {
         String[] commonTerms = new String[commonTermsIds.size()];
         int i = 0;
         for (int termId : commonTermsIds) {
@@ -374,33 +369,113 @@ public class ReviewSearch {
             ++i;
         }
 
-        // Calculate the Jaccard Coefficient for each of the above terms, and keep only those above 'JACCARD_THRESHOLD'
+        return commonTerms;
+    }
+
+    /**
+     * Calculate the Jaccard Coefficient for each of the above terms, and keep only those above 'JACCARD_THRESHOLD'.
+     * @param ngrams n-grams of our term
+     * @param commonTerms String array of terms with common n-grams as our term.
+     * @param isProduct Indicate if this method should refer to the product or token index.
+     * @return All terms that agree with the Jaccard Coefficient threshold, as an ArrayList
+     */
+    private ArrayList<String> calcJaccardCoef(String[] ngrams, String[] commonTerms, boolean isProduct) {
         ArrayList<String> jaccardTerms = new ArrayList<>();
         for (String cur : commonTerms) {
-            String[] curNgrams = (isProduct) ?
-                                                Utils.findNGrams(ir.productNGI.getN(), NGramIndex.EDGE_MARK, cur) :
-                                                Utils.findNGrams(ir.tokenNGI.getN(), NGramIndex.EDGE_MARK, cur);
+            String[] curNgrams = ir.getNGrams(cur, isProduct);
 
             double jaccardCoef = (double) Utils.intersectSizeStringArrays(ngrams, curNgrams) /
-                                                                    Utils.unionSizeStringArrays(ngrams, curNgrams);
+                    Utils.unionSizeStringArrays(ngrams, curNgrams);
 
             if (jaccardCoef > JACCARD_THRESHOLD) {
                 jaccardTerms.add(cur);
             }
         }
 
-        // Find the term(s) with the lowest Damerau-Levenshtein edit distance.
-        String bestCorrection = term;
-        int minDLD = Integer.MAX_VALUE;
+        return jaccardTerms;
+    }
+
+    /**
+     * Find the term(s) with the lowest Damerau-Levenshtein edit distance.
+     * @param term Our original term
+     * @param jaccardTerms All terms that agree with the Jaccard Coefficient threshold
+     * @param minDLD Only get terms with DLD lower than or equal to this.
+     * @return All terms that agree with the DLD threshold, as an ArrayList
+     */
+    private ArrayList<DLDistance> getTermsWithDLD(String term, ArrayList<String> jaccardTerms, int minDLD) {
+        ArrayList<DLDistance> dldTerms = new ArrayList<>();
         for (String cur : jaccardTerms) {
-            int curDLD = Utils.DLD(term, cur);
-            if (curDLD < minDLD) {
-                minDLD = curDLD;
-                bestCorrection = cur;
+            DLDistance curDLD = Utils.DLD(cur, term);
+            if (curDLD.getDistance() <= minDLD) {
+                dldTerms.add(curDLD);
             }
         }
 
-        // todo: Choose which one to return by search history.
-        return bestCorrection;
+        return dldTerms;
+    }
+
+    /**
+     * Calculate the probability that the user would write the word w.
+     * @param w The word we calculate the probability for
+     * @return The probability
+     */
+    private double p_w(String w) {
+        return (double) ir.getTokenCollectionFrequency(w) / ir.getTokenSizeOfReviews();
+    }
+
+    /**
+     * Given a term with a spelling error, find a spelling correction - hence return a word that is the best correction
+     * @param term The term to correct
+     * @param isProduct Indicate if this method should refer to the product or token index.
+     * @return A word that is the best correction to the term's spelling error.
+     */
+    private String findSpellingCorrection(String term, boolean isProduct) {
+        // Find n-grams for term
+        String[] ngrams = ir.getNGrams(term, isProduct);
+
+        // Get all term numbers with common ngrams.
+        Set<Integer> commonTermsIds = ir.findTermsWithCommonNgrams(ngrams, isProduct);
+
+        // Get the actual terms that correspond with the id
+        String[] commonTerms = getTermsFromIds(commonTermsIds, isProduct);
+
+        // Calculate the Jaccard Coefficient for each of the above terms, and keep only those above 'JACCARD_THRESHOLD'
+        ArrayList<String> jaccardTerms = calcJaccardCoef(ngrams, commonTerms, isProduct);
+
+        // Find the term(s) with the lowest Damerau-Levenshtein edit distance.
+        ArrayList<DLDistance> dldTerms = getTermsWithDLD(term, jaccardTerms, 1);
+
+        // For each word w, calculate P(w).
+        // Then find out what correction was used and on which letters.
+        // Now calculate P(x|w).
+        // Take w that yields the maximum.
+        for (DLDistance dld : dldTerms) {
+            double pw = p_w(dld.getCorrect());
+            // Here I'm counting on having only one edit since I require an edit distance of 1.
+            // This requires a little bit more work in order to be generic.
+            ArrayList<Edit> edits = dld.getEdits();
+            String errorType = edits.get(0).getType();
+            int errorIndex = edits.get(0).getIndex();
+            String x = dld.getWrong();
+            String w = dld.getCorrect();
+            switch (errorType) {
+                case "sub":
+                    String xi = x.substring(errorIndex, errorIndex + 1);
+                    String wi = w.substring(errorIndex, errorIndex + 1);
+                    int numerator = ir.lp.getSubMat().getOrDefault(xi + wi, 0);
+                    // int denominator = count[wi]; How many times wi appears in all of the words.
+                    break;
+                case "ins":
+                    break;
+                case "del":
+                    break;
+                case "trans":
+                    break;
+            }
+
+        }
+
+        // todo? Choose which one to return by search history.
+        return term;
     }
 }

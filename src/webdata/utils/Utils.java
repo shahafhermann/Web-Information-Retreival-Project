@@ -1,13 +1,11 @@
 package webdata.utils;
 
-import webdata.NGramIndex;
-
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.*;
 
 /**
- * Static class for utility methods
+ * Static class for utilities
  */
 public final class Utils {
 
@@ -120,17 +118,18 @@ public final class Utils {
     /**
      * Compute the Damerau-Levenshtein distance between the specified source
      * string and the specified target string.
-     * @param s1 First String
-     * @param s2 Second String
+     * @param s1 First String, Considered as the "correct" word
+     * @param s2 Second String, Considered as the "misspelled" word
      * @return
      */
-    public static int DLD(String s1, String s2) {
+    public static DLDistance DLD(String s1, String s2) {
         if (s1 == null || s2 == null) {  // Invalid input
-            return -1;
+            return null;
         }
 
-        if (s1.equals(s2)) {  // No distancd to compute
-            return 0;
+        if (s1.equals(s2)) {  // No distance to compute
+            int[][] empty = {};
+            return new DLDistance(s2, s1, empty);
         }
 
         // The max possible distance
@@ -165,7 +164,7 @@ public final class Utils {
         for (int i = 1; i <= s1.length(); ++i) {
             int db = 0;
 
-            // look at each character in b
+            // look at each character in s2
             for (int j = 1; j <= s2.length(); ++j) {
                 int i1 = da.get(s2.charAt(j - 1));
                 int j1 = db;
@@ -186,19 +185,22 @@ public final class Utils {
             da.put(s1.charAt(i - 1), i);
         }
 
-        return distances[s1.length() + 1][s2.length() + 1];
+        return new DLDistance(s2, s1, distances);
     }
 
     /**
-     * Find the minimum of 4 values
-     * @param a value 1
-     * @param b value 2
-     * @param c value 3
-     * @param d value 4
-     * @return The minimum
+     * Get the minimum of given int values
+     * @param args Integers to compare
+     * @return The minimum value
      */
-    public static int min(final int a, final int b, final int c, final int d) {
-        return Math.min(a, Math.min(b, Math.min(c, d)));
+    public static int min(int... args) {
+        int min = Integer.MAX_VALUE;
+        for (int arg : args) {
+            if (arg < min) {
+                min = arg;
+            }
+        }
+        return min;
     }
 
     /**

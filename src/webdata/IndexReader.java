@@ -1,10 +1,9 @@
 package webdata;
 
+import webdata.utils.LetterProbability;
 import webdata.utils.Utils;
 
 import java.io.*;
-import java.rmi.server.ExportException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class IndexReader {
@@ -14,6 +13,8 @@ public class IndexReader {
     ReviewData rd;
     NGramIndex tokenNGI;
     NGramIndex productNGI;
+    LetterProbability tokenLp;
+    LetterProbability productLp;
 
     /**
      * Creates an IndexReader which will read from the given directory
@@ -25,6 +26,8 @@ public class IndexReader {
         rd = (ReviewData) readObject(dir, IndexWriter.reviewDataFileName);
         tokenNGI = (NGramIndex) readObject(dir, IndexWriter.tokenNGIFileName);
         productNGI = (NGramIndex) readObject(dir, IndexWriter.productNGIFileName);
+        tokenLp = (LetterProbability) readObject(dir, IndexWriter.tokenLetterProbabilityFileName);
+        productLp = (LetterProbability) readObject(dir, IndexWriter.productLetterProbabilityFileName);
     }
 
     private Object readObject(String dir, String fileName) {
@@ -42,6 +45,18 @@ public class IndexReader {
     }
 
     // ------------------------------------------------------------ //
+
+    /**
+     * Get the the n-grams for the given term
+     * @param term Term to find n-grams of
+     * @param isProduct Indicate if this method should refer to the product or token index.
+     * @return The n-grams as a String array
+     */
+    public String[] getNGrams(String term, boolean isProduct) {
+        return (isProduct) ?
+                Utils.findNGrams(productNGI.getN(), NGramIndex.EDGE_MARK, term) :
+                Utils.findNGrams(tokenNGI.getN(), NGramIndex.EDGE_MARK, term);
+    }
 
     /**
      * Find all term numbers that have ngrams in common with term.

@@ -19,10 +19,10 @@ public class main {
         IndexReader ir = new IndexReader(dir);
 
 //        test1(ir);
-        test2(ir);
-//        test3(ir);
+//        test2(ir);
+        test3(ir);
 
-//        siw.removeIndex(dir);
+        siw.removeIndex(dir);
 
     }
 
@@ -37,7 +37,8 @@ public class main {
 //        System.out.println(ir.tokenDict.mapping.get(59) + " , " + ir.tokenDict.searchTerm(59));
 //        System.out.println(ir.tokenDict.mapping.get(120) + " , " + ir.tokenDict.searchTerm(120));
 
-
+        System.out.println(Utils.DLD("israel", "isreal"));
+//        System.out.println(Utils.mappingTermAndError);
     }
 
     private static void test2(IndexReader ir) {
