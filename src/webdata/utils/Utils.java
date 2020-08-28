@@ -127,62 +127,31 @@ public final class Utils {
             return null;
         }
 
-        if (s1.equals(s2)) {  // No distance to compute
-            int[][] empty = {};
-            return new DLDistance(s2, s1, empty);
-        }
+        int[][] distances = new int[s1.length() + 1][s2.length() + 1];
 
-        // The max possible distance
-        int inf = s1.length() + s2.length();
-
-        // Create and initialize the character array indices
-        HashMap<Character, Integer> da = new HashMap<>();
-        for (int i = 0; i < s1.length(); ++i) {
-            da.put(s1.charAt(i), 0);
-        }
-        for (int j = 0; j < s2.length(); ++j) {
-            da.put(s2.charAt(j), 0);
-        }
-
-        // Create the distance matrix H[0 .. s1.length+1][0 .. s2.length+1]
-        int[][] distances = new int[s1.length() + 2][s2.length() + 2];
-
-        // initialize the left and top edges of H
-        for (int i = 0; i <= s1.length(); ++i) {
-            distances[i + 1][0] = inf;
-            distances[i + 1][1] = i;
-        }
-
-        for (int j = 0; j <= s2.length(); ++j) {
-            distances[0][j + 1] = inf;
-            distances[1][j + 1] = j;
-
-        }
-
-        // fill in the distance matrix H
-        // look at each character in s1
-        for (int i = 1; i <= s1.length(); ++i) {
-            int db = 0;
-
-            // look at each character in s2
-            for (int j = 1; j <= s2.length(); ++j) {
-                int i1 = da.get(s2.charAt(j - 1));
-                int j1 = db;
-
-                int cost = 1;
-                if (s1.charAt(i - 1) == s2.charAt(j - 1)) {
-                    cost = 0;
-                    db = j;
-                }
-
-                distances[i + 1][j + 1] = min(
-                        distances[i][j] + cost, // substitution
-                        distances[i + 1][j] + 1, // insertion
-                        distances[i][j + 1] + 1, // deletion
-                        distances[i1][j1] + (i - i1 - 1) + 1 + (j - j1 - 1));
+        // If there exists a distance to calculate
+        if (!s1.equals(s2)) {
+            for (int i = 0; i < s1.length() + 1; ++i) {
+                distances[i][0] = i;
+            }
+            for (int j = 0; j < s2.length() + 1; ++j) {
+                distances[0][j] = j;
             }
 
-            da.put(s1.charAt(i - 1), i);
+            for (int i = 0; i < s1.length(); ++i) {
+                for (int j = 0; j < s2.length(); ++j) {
+                    int cost = (s1.charAt(i) == s2.charAt(j)) ? 0 : 1;
+
+                    distances[i + 1][j + 1] = min(distances[i][j + 1] + 1,  // Insertion
+                            distances[i + 1][j] + 1,  // Deletion
+                            distances[i][j] + cost  // Substitution
+                    );
+                    // Transposition
+                    if (i > 0 && j > 0 && s1.charAt(i) == s2.charAt(j - 1) && s1.charAt(i - 1) == s2.charAt(j)) {
+                        distances[i + 1][j + 1] = min(distances[i+1][j+1], distances[i - 1][j - 1] + cost);
+                    }
+                }
+            }
         }
 
         return new DLDistance(s2, s1, distances);
@@ -216,7 +185,7 @@ public final class Utils {
 
         // Make the term of the form $term$ (if edgeMark = "$").
         String newTerm = edgeMark.concat(term).concat(edgeMark);
-        for (int j = 0; j < newTerm.length() - N; ++j) {
+        for (int j = 0; j < newTerm.length() - N + 1; ++j) {
             ngrams[j] = newTerm.substring(j, j + N);
         }
 

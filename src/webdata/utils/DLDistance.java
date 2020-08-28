@@ -41,7 +41,7 @@ public class DLDistance {
      * Get the minimum edit distance
      */
     public int getDistance() {
-        return distanceMatrix[correct.length() + 1][wrong.length() + 1];
+        return distanceMatrix[correct.length()][wrong.length()];
     }
 
     /**
@@ -54,7 +54,7 @@ public class DLDistance {
 
         int i = correct.length();
         int j = wrong.length();
-        while (i != 0 && j != 0) {
+        while (i != 0 || j != 0) {
             if (i > 1 && j > 1 && correct.charAt(i - 1) == wrong.charAt(j - 2)
                     && correct.charAt(i - 2) == wrong.charAt(j - 1)) {
                 if (distanceMatrix[i - 2][j - 2] < distanceMatrix[i][j]) {
@@ -65,19 +65,19 @@ public class DLDistance {
                 }
             }
 
-            int sub = distanceMatrix[i][j];
-            int ins = distanceMatrix[i + 1][j];
-            int del = distanceMatrix[i][j + 1];
+            int sub = (i > 0 && j > 0) ? distanceMatrix[i - 1][j - 1] : Integer.MAX_VALUE;
+            int ins = (j > 0) ? distanceMatrix[i][j - 1] : Integer.MAX_VALUE;
+            int del = (i > 0) ? distanceMatrix[i - 1][j] : Integer.MAX_VALUE;
             int min = Utils.min(sub, ins, del);
 
             if (min == sub) {
-                if (distanceMatrix[i + 1][j + 1] > distanceMatrix[i][j]) {
+                if (distanceMatrix[i][j] > distanceMatrix[i - 1][j - 1]) {
                     edits.add(0, new Edit("sub", i - 1));
                 }
                 i--;
                 j--;
             } else if (min == ins) {
-                edits.add(0, new Edit("ins", i - 1));
+                edits.add(0, new Edit("ins", i));
                 j--;
             } else if (min == del) {
                 edits.add(0, new Edit("del", i - 1));

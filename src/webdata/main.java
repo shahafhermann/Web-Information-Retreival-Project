@@ -1,5 +1,7 @@
 package webdata;
 
+import webdata.utils.DLDistance;
+import webdata.utils.Edit;
 import webdata.utils.Utils;
 
 import java.text.SimpleDateFormat;
@@ -32,13 +34,10 @@ public class main {
     }
 
     private static void test3(IndexReader ir) {
-//        System.out.println(ir.tokenDict.mapping.get(1) + " , " + ir.tokenDict.searchTerm(1));
-//        System.out.println(ir.tokenDict.mapping.get(4) + " , " + ir.tokenDict.searchTerm(4));
-//        System.out.println(ir.tokenDict.mapping.get(59) + " , " + ir.tokenDict.searchTerm(59));
-//        System.out.println(ir.tokenDict.mapping.get(120) + " , " + ir.tokenDict.searchTerm(120));
+        ReviewSearch rs = new ReviewSearch(ir);
 
-        System.out.println(Utils.DLD("israel", "isreal"));
-//        System.out.println(Utils.mappingTermAndError);
+        String correction = rs.findSpellingCorrection("lo", false);
+        System.out.println(correction);
     }
 
     private static void test2(IndexReader ir) {

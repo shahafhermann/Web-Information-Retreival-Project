@@ -72,7 +72,9 @@ public class IndexReader {
             ArrayList<Integer> commonTerms = (isProduct) ?
                                                             productNGI.getNGrams(gram) :
                                                             tokenNGI.getNGrams(gram);
-            allTerms.addAll(commonTerms);
+            if (commonTerms != null) {
+                allTerms.addAll(commonTerms);
+            }
         }
 
         return allTerms;

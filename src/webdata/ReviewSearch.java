@@ -9,7 +9,7 @@ import java.util.*;
 public class ReviewSearch {
 
     private static final int C = 30;
-    private static final double JACCARD_THRESHOLD = 0.4;  // Should be in range [0,1]
+    private static final double JACCARD_THRESHOLD = 0.3;  // Should be in range [0,1]
 
     private IndexReader ir;
 
@@ -406,7 +406,7 @@ public class ReviewSearch {
         ArrayList<DLDistance> dldTerms = new ArrayList<>();
         for (String cur : jaccardTerms) {
             DLDistance curDLD = Utils.DLD(cur, term);
-            if (curDLD.getDistance() <= minDLD) {
+            if (curDLD != null && curDLD.getDistance() <= minDLD) {
                 dldTerms.add(curDLD);
             }
         }
@@ -424,12 +424,155 @@ public class ReviewSearch {
     }
 
     /**
+     * Calculate the probability as a function of the error type, using confusion matrices and letter probabilities.
+     * @param x The original (misspelled) term
+     * @param w The potential correction
+     * @param errorType Type of error (edit)
+     * @param errorIndex The index in w where the edit would happen
+     * @param isProduct Indicate if this method should refer to the product or token index.
+     * @return The probability that this edit was the user's original intent.
+     */
+    private double calcProbabilityForError(String x, String w, String errorType, int errorIndex, boolean isProduct) {
+        int numerator = 0;
+        int denominator = 1;
+        String x_i, w_i, w_i_minus_1;
+        switch (errorType) {
+            // 'x' was written as 'y'
+            case "sub":
+                x_i = x.substring(errorIndex, errorIndex + 1);
+                w_i = w.substring(errorIndex, errorIndex + 1);
+
+                // sub[x_i, w_i]
+                numerator = (isProduct) ?
+                        ir.productLp.getSubMat().getOrDefault(x_i + w_i, 0) :
+                        ir.tokenLp.getSubMat().getOrDefault(x_i + w_i, 0);
+                // count[w_i]
+                denominator = (isProduct) ?
+                        ir.productLp.getOccurrences().getOrDefault(w_i, 0) :
+                        ir.tokenLp.getOccurrences().getOrDefault(w_i, 0);
+                // Normalize:
+                ++numerator;
+                denominator += (isProduct) ? ir.productLp.getAlphabetSize() : ir.tokenLp.getAlphabetSize();
+                break;
+
+            // 'x' was written as 'xy'
+            case "ins":
+                x_i = (errorIndex > x.length() - 1) ?
+                        x.substring(x.length() - 1) :
+                        x.substring(errorIndex, errorIndex + 1);  // The added letter
+                // If the misspelled word added a letter "x" at the beginning than "" turned into "x"
+                w_i_minus_1 = (errorIndex != 0) ? w.substring(errorIndex - 1, errorIndex) : "";
+
+                // ins[w_i-1, x_i]
+                numerator = (isProduct) ?
+                        ir.productLp.getInsMat().getOrDefault(w_i_minus_1 + x_i, 0) :
+                        ir.tokenLp.getInsMat().getOrDefault(w_i_minus_1 + x_i, 0);
+                // count[w_i-1]
+                denominator = (isProduct) ?
+                        ir.productLp.getOccurrences().getOrDefault(w_i_minus_1, 0) :
+                        ir.tokenLp.getOccurrences().getOrDefault(w_i_minus_1, 0);
+                // Normalize:
+                ++numerator;
+                denominator += (isProduct) ? ir.productLp.getAlphabetSize() : ir.tokenLp.getAlphabetSize();
+                break;
+
+            // 'xy' was written as 'x'
+            case "del":
+                // If the misspelled word deleted a letter "x" at the beginning than "x" turned into ""
+                w_i_minus_1 = (errorIndex != 0) ? w.substring(errorIndex - 1, errorIndex) : "";
+                w_i = w.substring(errorIndex, errorIndex + 1);  // The deleted letter
+
+                // del[w_i-1, w_i]
+                numerator = (isProduct) ?
+                        ir.productLp.getDelMat().getOrDefault(w_i_minus_1 + w_i, 0) :
+                        ir.tokenLp.getDelMat().getOrDefault(w_i_minus_1 + w_i, 0);
+                // count[w_i-1, w_i]
+                denominator = (isProduct) ?
+                        ir.productLp.getOccurrences().getOrDefault(w_i_minus_1 + w_i, 0) :
+                        ir.tokenLp.getOccurrences().getOrDefault(w_i_minus_1 + w_i, 0);
+                // Normalize:
+                ++numerator;
+                denominator += (isProduct) ? ir.productLp.getAlphabetSize() : ir.tokenLp.getAlphabetSize();
+                break;
+
+            // 'xy' was written as 'yx'
+            case "trans":
+                w_i = w.substring(errorIndex, errorIndex + 1);
+                String w_i_plus_1 = w.substring(errorIndex + 1, errorIndex + 2);  // The deleted letter
+
+                // del[w_i-1, w_i]
+                numerator = (isProduct) ?
+                        ir.productLp.getTransMat().getOrDefault(w_i + w_i_plus_1, 0) :
+                        ir.tokenLp.getTransMat().getOrDefault(w_i + w_i_plus_1, 0);
+                // count[w_i-1, w_i]
+                denominator = (isProduct) ?
+                        ir.productLp.getOccurrences().getOrDefault(w_i + w_i_plus_1, 0) :
+                        ir.tokenLp.getOccurrences().getOrDefault(w_i + w_i_plus_1, 0);
+                // Normalize:
+                ++numerator;
+                denominator += (isProduct) ? ir.productLp.getAlphabetSize() : ir.tokenLp.getAlphabetSize();
+                break;
+        }
+
+        return (double) numerator / denominator;
+    }
+
+    /**
+     * For each word w, calculate P(w).
+     * Then find out what correction was used and on which letters.
+     * Now calculate P(x|w), using confusion matrices and letter occurrences.
+     * Finally, find w that yields the maximum of P(x|w)*P(w).
+     * @param dldTerms All terms that had been processed with dl distance and have a good fit.
+     * @param isProduct Indicate if this method should refer to the product or token index.
+     * @return A string of the best correction.
+     */
+    private String applyNoisyChannelWithBayesRule(ArrayList<DLDistance> dldTerms, boolean isProduct) {
+        double maxProb = Integer.MIN_VALUE;
+        String argmax = "";
+
+        for (DLDistance dld : dldTerms) {
+            double pw = p_w(dld.getCorrect());
+            String x = dld.getWrong();
+            String w = dld.getCorrect();
+
+            ArrayList<Edit> edits = dld.getEdits();
+            // This shouldn't happen since it implies that the dld term is the same as the original term
+            if (edits.isEmpty()) {
+                return w;
+            }
+
+            double px_w = 1;
+
+            for (Edit edit : edits) {
+                String errorType = edit.getType();
+                int errorIndex = edit.getIndex();
+
+                // Non dependent product of the probability for each edit.
+                px_w *= calcProbabilityForError(x, w, errorType, errorIndex, isProduct);
+            }
+
+            double curProb = px_w * pw;
+            if (curProb > maxProb) {
+                maxProb = curProb;
+                argmax = w;
+            }
+        }
+
+        // By now argmax should be the w that yields the maximal probability, and hence the best correction.
+
+        return argmax;
+    }
+
+    /**
      * Given a term with a spelling error, find a spelling correction - hence return a word that is the best correction
      * @param term The term to correct
      * @param isProduct Indicate if this method should refer to the product or token index.
      * @return A word that is the best correction to the term's spelling error.
      */
-    private String findSpellingCorrection(String term, boolean isProduct) {
+    public String findSpellingCorrection(String term, boolean isProduct) {
+        if (term == null) {
+            return "";
+        }
         // Find n-grams for term
         String[] ngrams = ir.getNGrams(term, isProduct);
 
@@ -443,39 +586,15 @@ public class ReviewSearch {
         ArrayList<String> jaccardTerms = calcJaccardCoef(ngrams, commonTerms, isProduct);
 
         // Find the term(s) with the lowest Damerau-Levenshtein edit distance.
-        ArrayList<DLDistance> dldTerms = getTermsWithDLD(term, jaccardTerms, 1);
+        ArrayList<DLDistance> dldTerms = getTermsWithDLD(term, jaccardTerms, 3);
 
         // For each word w, calculate P(w).
         // Then find out what correction was used and on which letters.
         // Now calculate P(x|w).
         // Take w that yields the maximum.
-        for (DLDistance dld : dldTerms) {
-            double pw = p_w(dld.getCorrect());
-            // Here I'm counting on having only one edit since I require an edit distance of 1.
-            // This requires a little bit more work in order to be generic.
-            ArrayList<Edit> edits = dld.getEdits();
-            String errorType = edits.get(0).getType();
-            int errorIndex = edits.get(0).getIndex();
-            String x = dld.getWrong();
-            String w = dld.getCorrect();
-            switch (errorType) {
-                case "sub":
-                    String xi = x.substring(errorIndex, errorIndex + 1);
-                    String wi = w.substring(errorIndex, errorIndex + 1);
-                    int numerator = ir.lp.getSubMat().getOrDefault(xi + wi, 0);
-                    // int denominator = count[wi]; How many times wi appears in all of the words.
-                    break;
-                case "ins":
-                    break;
-                case "del":
-                    break;
-                case "trans":
-                    break;
-            }
-
-        }
+        String bestCorrection = applyNoisyChannelWithBayesRule(dldTerms, isProduct);
 
         // todo? Choose which one to return by search history.
-        return term;
+        return bestCorrection;
     }
 }

@@ -1,9 +1,10 @@
 package webdata.utils;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
-public class LetterProbability {
+public class LetterProbability implements Serializable {
 
     //---------------------------------------------------//
     //***** Hard Coded Kernighan Confusion Matrices *****//
@@ -20,10 +21,14 @@ public class LetterProbability {
     private static final String[] trans_keys = {"gw", "gv", "gu", "gt", "gs", "gr", "gq", "gp", "gz", "gy", "gx", "gg", "gf", "ge", "gd", "gc", "gb", "ga", "go", "gn", "gm", "gl", "gk", "gj", "gi", "gh", "tz", "tx", "ty", "tv", "tw", "tt", "tu", "tr", "ts", "tp", "tq", "tn", "to", "tl", "tm", "tj", "tk", "th", "ti", "tf", "tg", "td", "te", "tb", "tc", "ta", "vu", "zl", "zm", "zn", "zo", "zh", "zi", "zj", "zk", "zd", "ze", "zf", "zg", "za", "zb", "zc", "zx", "zy", "zz", "zt", "zu", "zv", "zw", "zp", "zq", "zr", "zs", "wl", "va", "vc", "wk", "vh", "wj", "vi", "vj", "vk", "vl", "vm", "wi", "vn", "vo", "me", "md", "mg", "mf", "ma", "mc", "mb", "mm", "ml", "mo", "mn", "mi", "mh", "mk", "mj", "mu", "mt", "mw", "mv", "mq", "mp", "ms", "mr", "vt", "my", "mx", "mz", "vv", "vw", "vx", "vz", "fp", "fq", "fr", "fs", "ft", "fu", "fv", "fw", "fx", "fy", "fz", "fa", "fb", "fc", "fd", "fe", "ff", "fg", "fh", "fi", "fj", "fk", "fl", "fm", "fn", "fo", "sz", "sy", "sx", "ss", "sr", "sq", "sp", "sw", "sv", "su", "st", "sk", "sj", "si", "sh", "so", "sn", "sm", "sl", "sc", "sb", "sa", "sg", "sf", "se", "sd", "lf", "lg", "ld", "le", "lb", "lc", "la", "ln", "lo", "ll", "lm", "lj", "lk", "lh", "li", "lv", "lw", "lt", "lu", "lr", "ls", "lp", "lq", "lz", "lx", "ly", "wq", "yh", "yk", "yj", "ym", "yl", "yo", "yn", "ya", "yc", "yb", "ye", "yd", "yg", "yf", "yy", "yx", "yz", "yq", "yp", "ys", "yr", "yu", "yt", "yw", "yv", "em", "el", "eo", "en", "ei", "eh", "ek", "ej", "ee", "ed", "eg", "ef", "ea", "ec", "eb", "ey", "ex", "ez", "eu", "et", "ew", "ev", "eq", "ep", "es", "er", "rt", "ru", "rv", "rw", "rp", "rq", "rr", "rs", "rx", "ry", "rz", "rd", "re", "rf", "rg", "ra", "rb", "rc", "rl", "rm", "rn", "ro", "rh", "ri", "rj", "rk", "xj", "xk", "xh", "xi", "xn", "xo", "xl", "xm", "xb", "xc", "xa", "xf", "xg", "xd", "xe", "xz", "xx", "xy", "xr", "xs", "xp", "xq", "xv", "xw", "xt", "xu", "wy", "wx", "kc", "kb", "ka", "kg", "kf", "ke", "kd", "kk", "kj", "ki", "kh", "ko", "kn", "km", "kl", "ks", "kr", "kq", "kp", "kw", "kv", "ku", "kt", "kz", "ky", "kx", "dn", "do", "dl", "dm", "dj", "dk", "dh", "di", "df", "dg", "dd", "de", "db", "dc", "da", "dz", "dx", "dy", "dv", "dw", "dt", "du", "dr", "ds", "dp", "dq", "qq", "qp", "qs", "qr", "qu", "qt", "qw", "qv", "qy", "qx", "qz", "qa", "qc", "qb", "qe", "qd", "qg", "qf", "qi", "qh", "qk", "qj", "qm", "ql", "qo", "qn", "wc", "wb", "wa", "wo", "wn", "wm", "wg", "wf", "we", "wd", "jx", "jy", "jz", "jt", "ju", "jv", "jw", "jp", "jq", "jr", "js", "jl", "jm", "jn", "jo", "jh", "ji", "jj", "jk", "jd", "je", "jf", "jg", "ja", "jb", "jc", "ww", "wv", "wu", "wt", "ws", "wr", "ck", "cj", "ci", "ch", "co", "cn", "cm", "cl", "cc", "cb", "ca", "wp", "cg", "cf", "ce", "cd", "cz", "cy", "cx", "cs", "cr", "cq", "cp", "cw", "cv", "cu", "ct", "pr", "ps", "pp", "pq", "pv", "pw", "pt", "pu", "pz", "px", "py", "wz", "pb", "pc", "pa", "pf", "pg", "pd", "pe", "pj", "pk", "ph", "pi", "pn", "po", "pl", "pm", "iy", "ix", "vb", "iz", "vd", "ve", "vf", "vg", "iq", "ip", "is", "ir", "iu", "it", "iw", "iv", "ii", "ih", "ik", "ij", "im", "il", "io", "in", "ia", "vy", "ic", "ib", "ie", "id", "ig", "if", "wh", "yi", "vr", "vs", "bd", "be", "bf", "bg", "ba", "bb", "bc", "bl", "bm", "bn", "bo", "bh", "bi", "bj", "bk", "bt", "bu", "bv", "bw", "bp", "bq", "br", "bs", "bx", "by", "bz", "oo", "on", "om", "ol", "ok", "oj", "oi", "oh", "og", "of", "oe", "od", "oc", "ob", "oa", "oz", "oy", "ox", "ow", "ov", "ou", "ot", "os", "or", "oq", "op", "hz", "hx", "hy", "hr", "hs", "hp", "hq", "hv", "hw", "ht", "hu", "hj", "hk", "hh", "hi", "hn", "ho", "hl", "hm", "hb", "hc", "ha", "hf", "hg", "hd", "he", "uy", "ux", "uz", "uu", "ut", "uw", "uv", "uq", "up", "us", "ur", "um", "ul", "uo", "un", "ui", "uh", "uk", "uj", "ue", "ud", "ug", "uf", "ua", "uc", "ub", "aa", "ac", "ab", "ae", "ad", "ag", "af", "ai", "ah", "ak", "aj", "am", "al", "ao", "an", "aq", "ap", "as", "ar", "au", "at", "aw", "av", "ay", "ax", "az", "nh", "ni", "nj", "nk", "nl", "nm", "nn", "no", "na", "nb", "nc", "nd", "ne", "nf", "ng", "nx", "ny", "nz", "np", "nq", "nr", "ns", "nt", "nu", "nv", "nw", "vp", "vq"};
     private static final int[] trans_vals = {0, 0, 3, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 4, 0, 15, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 11, 5, 0, 0, 0, 0, 3, 4, 0, 0, 0, 21, 49, 0, 0, 0, 4, 0, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 9, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 1, 0, 0, 0, 0, 16, 0, 0, 0, 0, 22, 0, 0, 3, 1, 0, 0, 15, 5, 1, 0, 2, 5, 0, 0, 4, 0, 0, 9, 0, 0, 1, 12, 20, 0, 0, 11, 0, 1, 0, 0, 0, 0, 0, 4, 9, 0, 1, 3, 0, 1, 3, 0, 0, 0, 7, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2, 1, 0, 0, 1, 0, 0, 0, 0, 0, 2, 10, 1, 0, 0, 0, 0, 6, 21, 11, 16, 60, 0, 0, 0, 0, 5, 0, 0, 1, 4, 0, 2, 0, 0, 85, 0, 0, 0, 0, 2, 5, 29, 2, 10, 0, 0, 1, 0, 0, 0, 0, 2, 0, 0, 24, 0, 3, 12, 0, 0, 2, 0, 7, 30, 0, 14, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 85, 1, 13, 0, 0, 15, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 7, 0, 5, 3, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 17, 0, 0, 0, 4, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 3, 0, 1, 0, 0, 1, 0, 42, 13, 0, 35, 0, 6, 0, 0, 0, 0, 0, 9, 11, 5, 15, 0, 31, 8, 66, 3, 3, 1, 4, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 5, 0, 1, 0, 0, 5, 0, 0, 0, 4, 0, 2, 0, 5, 0, 0, 1, 7, 0, 0, 1, 1, 11, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 15, 0, 0, 0, 0, 2, 0, 0, 0, 2, 11, 11, 1, 2, 20, 0, 2, 0, 0, 0, 1, 1, 2, 0, 22, 5, 0, 0, 2, 0, 1, 1, 0, 0, 19, 0, 1, 0, 4, 14, 10, 25, 0, 3, 3, 27, 31, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 15, 0, 6, 2, 12, 0, 8, 0, 0, 0, 0, 0, 0, 6, 4, 0, 0, 0, 0, 0};
 
-    private TreeMap<String, Integer> delMat;
-    private TreeMap<String, Integer> insMat;
-    private TreeMap<String, Integer> subMat;
-    private TreeMap<String, Integer> transMat;
+    private TreeMap<String, Integer> delMat = new TreeMap<>();
+    private TreeMap<String, Integer> insMat = new TreeMap<>();
+    private TreeMap<String, Integer> subMat = new TreeMap<>();
+    private TreeMap<String, Integer> transMat = new TreeMap<>();
+
+    private TreeMap<String, Integer> occurrences = new TreeMap<>();
+
+    private int alphabetSize = 0;
 
     public LetterProbability(ArrayList<String> terms) {
         buildMatrices();
@@ -50,7 +55,25 @@ public class LetterProbability {
 
     private void countOccurrences(ArrayList<String> terms) {
         for (String term : terms) {
+            for (int i = 0; i < term.length() - 1; ++i) {
+                String singleLetter = term.substring(i, i + 1);
+                String doubleLetter = term.substring(i, i + 2);
+                int singleCount = occurrences.getOrDefault(singleLetter, 0);
+                int doubleCount = occurrences.getOrDefault(doubleLetter, 0);
+                if (singleCount == 0) {  // Found a new single letter
+                    ++alphabetSize;
+                }
+                ++singleCount;
+                ++doubleCount;
+                occurrences.put(singleLetter, singleCount);
+                occurrences.put(doubleLetter, doubleCount);
+            }
 
+            // Now take care of the last letter;
+            String lastLetter = term.substring(term.length() - 1);
+            int lastCount = occurrences.getOrDefault(lastLetter, 0);
+            ++lastCount;
+            occurrences.put(lastLetter, lastCount);
         }
     }
 
@@ -68,5 +91,13 @@ public class LetterProbability {
 
     public TreeMap<String, Integer> getTransMat() {
         return transMat;
+    }
+
+    public TreeMap<String, Integer> getOccurrences() {
+        return occurrences;
+    }
+
+    public int getAlphabetSize() {
+        return alphabetSize;
     }
 }

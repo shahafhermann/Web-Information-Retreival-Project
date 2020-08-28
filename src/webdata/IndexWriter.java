@@ -96,7 +96,7 @@ public class IndexWriter{
         writeObject(dir, productLetterProbabilityFileName, productLp);
     }
 
-    private void writeObject(String dir, String fileName, Object o) {
+    public static void writeObject(String dir, String fileName, Object o) {
         try {
             ObjectOutputStream writer = new ObjectOutputStream(new FileOutputStream(dir + File.separator + fileName));
             writer.writeObject(o);
