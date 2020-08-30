@@ -63,17 +63,14 @@ public class LetterProbability implements Serializable {
                 if (singleCount == 0) {  // Found a new single letter
                     ++alphabetSize;
                 }
-                ++singleCount;
-                ++doubleCount;
-                occurrences.put(singleLetter, singleCount);
-                occurrences.put(doubleLetter, doubleCount);
+                occurrences.put(singleLetter, singleCount + 1);
+                occurrences.put(doubleLetter, doubleCount + 1);
             }
 
             // Now take care of the last letter;
             String lastLetter = term.substring(term.length() - 1);
             int lastCount = occurrences.getOrDefault(lastLetter, 0);
-            ++lastCount;
-            occurrences.put(lastLetter, lastCount);
+            occurrences.put(lastLetter, lastCount + 1);
         }
     }
 

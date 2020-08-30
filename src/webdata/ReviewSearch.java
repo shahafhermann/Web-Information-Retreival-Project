@@ -4,6 +4,7 @@ import com.sun.source.tree.Tree;
 import jdk.jshell.execution.Util;
 import webdata.utils.*;
 
+import java.io.File;
 import java.util.*;
 
 public class ReviewSearch {
@@ -39,8 +40,7 @@ public class ReviewSearch {
         return termFrequencies;
     }
 
-    private TreeMap<String, Integer> histogramQuery(Enumeration<String> query) {
-        List<String> queryList = Collections.list(query);
+    private TreeMap<String, Integer> histogramQuery(List<String> queryList) {
         TreeMap<String, Integer> hist = new TreeMap<>();
         for (String term: queryList) {
             Integer freq = (hist.keySet().contains(term.toLowerCase())) ? hist.get(term.toLowerCase()) + 1 : 1;
@@ -112,12 +112,17 @@ public class ReviewSearch {
      * SMART notation)
      * The list should be sorted by the ranking
      */
-    public Enumeration<Integer> vectorSpaceSearch(Enumeration<String> query, int k) {
-        // todo: add spell correction
+    public Enumeration<Integer> vectorSpaceSearch(Enumeration<String> query, int k, boolean searchHistory) {
+        ArrayList<String> queryList = new ArrayList<>();
+        while (query.hasMoreElements()) {
+            queryList.add(query.nextElement().toLowerCase());
+        }
 
+        // Spell correction
+        correctQuery(queryList, searchHistory);
 
         // Compute qqq:
-        TreeMap<String, Integer> queryHist = histogramQuery(query);
+        TreeMap<String, Integer> queryHist = histogramQuery(queryList);
         double[] ltc = computeLTCOfQuery(queryHist);
         TreeMap<String, Double> queryVec = new TreeMap<>();
         int i = 0;
@@ -194,14 +199,16 @@ public class ReviewSearch {
      * mixture model with the given value of lambda
      * The list should be sorted by the ranking
      */
-    public Enumeration<Integer> languageModelSearch(Enumeration<String> query, double lambda, int k) {
-        // todo: add spell correction
-
-
+    public Enumeration<Integer> languageModelSearch(Enumeration<String> query, double lambda, int k,
+                                                    boolean searchHistory) {
         ArrayList<String> queryList = new ArrayList<>();
         while (query.hasMoreElements()) {
             queryList.add(query.nextElement().toLowerCase());
         }
+
+        // Spell correction
+        correctQuery(queryList, searchHistory);
+
         Set<String> querySet = new HashSet<>(queryList);
         Set<Integer> relevantReviews = getRelevantReviews(querySet);
 
@@ -255,9 +262,9 @@ public class ReviewSearch {
      * 8.	Combine the weights calculated in steps 3 and 7 and normalize.
      * 9.	Return top k.
      */
-    public Collection<String> productSearch(Enumeration<String> query, int k) {
+    public Collection<String> productSearch(Enumeration<String> query, int k, boolean searchHistory) {
         // Find all relevant reviews according to the query
-        Enumeration<Integer> allRelevantReviews = vectorSpaceSearch(query, C);
+        Enumeration<Integer> allRelevantReviews = vectorSpaceSearch(query, C, searchHistory);
 
         List<Integer> allReviewsList = Collections.list(allRelevantReviews); // Convert to list
 
@@ -439,7 +446,9 @@ public class ReviewSearch {
         switch (errorType) {
             // 'x' was written as 'y'
             case "sub":
-                x_i = x.substring(errorIndex, errorIndex + 1);
+                x_i = (errorIndex > x.length() - 1) ?
+                        x.substring(x.length() - 1) :
+                        x.substring(errorIndex, errorIndex + 1);
                 w_i = w.substring(errorIndex, errorIndex + 1);
 
                 // sub[x_i, w_i]
@@ -564,12 +573,38 @@ public class ReviewSearch {
     }
 
     /**
+     * Find if any of the potential corrections was queried in the past and how many times,
+     * and give those words higher priority.
+     * If there's a tie, choose at random.
+     * If none was found, use noisy channel instead.
+     * @param dldTerms All terms that had been processed with dl distance and have a good fit.
+     * @param isProduct Indicate if this method should refer to the product or token index.
+     * @return A string of the best correction.
+     */
+    private String findInHistory(ArrayList<DLDistance> dldTerms, boolean isProduct) {
+        TreeMap<String, Integer> history = ir.qh.getHistory();
+
+        String bestFit = "";
+        int maxCount = 0;
+        for (DLDistance dld : dldTerms) {
+            String w = dld.getCorrect();
+            int curCount = history.getOrDefault(w, 0);
+            if (curCount > maxCount) {
+                maxCount = curCount;
+                bestFit = w;
+            }
+        }
+
+        return bestFit;
+    }
+
+    /**
      * Given a term with a spelling error, find a spelling correction - hence return a word that is the best correction
      * @param term The term to correct
      * @param isProduct Indicate if this method should refer to the product or token index.
      * @return A word that is the best correction to the term's spelling error.
      */
-    public String findSpellingCorrection(String term, boolean isProduct) {
+    private String findSpellingCorrection(String term, boolean isProduct, boolean historySearch) {
         if (term == null) {
             return "";
         }
@@ -588,13 +623,46 @@ public class ReviewSearch {
         // Find the term(s) with the lowest Damerau-Levenshtein edit distance.
         ArrayList<DLDistance> dldTerms = getTermsWithDLD(term, jaccardTerms, 3);
 
-        // For each word w, calculate P(w).
-        // Then find out what correction was used and on which letters.
-        // Now calculate P(x|w).
-        // Take w that yields the maximum.
-        String bestCorrection = applyNoisyChannelWithBayesRule(dldTerms, isProduct);
+        String bestCorrection;
+        if (historySearch) {
+            // Find if any of the potential corrections was queried in the past and how many times,
+            // and give those words higher priority.
+            bestCorrection = findInHistory(dldTerms, isProduct);
 
-        // todo? Choose which one to return by search history.
+        } else {
+            // For each word w, calculate P(w).
+            // Then find out what correction was used and on which letters.
+            // Now calculate P(x|w).
+            // Take w that yields the maximum.
+            bestCorrection = applyNoisyChannelWithBayesRule(dldTerms, isProduct);
+        }
+
         return bestCorrection;
+    }
+
+    private void correctQuery(List<String> query, boolean searchHistory) {
+        for (int i = 0; i < query.size(); ++i) {
+            String term = query.get(i);
+            if (!validSpelling(term)) {
+                String correction = findSpellingCorrection(term, false, searchHistory);
+                correction = correction.isEmpty() ? term : correction;
+                query.set(i, correction);
+
+                System.out.println("Term: '" + term + "' was corrected to: '" + correction + "'.");
+            }
+        }
+
+        saveQuery(query);
+    }
+
+    /**
+     * Add the query the the current history
+     * @param query Query to save
+     */
+    private void saveQuery(List<String> query) {
+        for (String term : query) {
+            ir.qh.save(term);
+            IndexWriter.writeObject(ir.historyDir, IndexWriter.historyFileName, ir.qh);
+        }
     }
 }

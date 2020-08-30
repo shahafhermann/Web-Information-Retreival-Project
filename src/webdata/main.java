@@ -4,6 +4,8 @@ import webdata.utils.DLDistance;
 import webdata.utils.Edit;
 import webdata.utils.Utils;
 
+import java.io.File;
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -22,7 +24,8 @@ public class main {
 
 //        test1(ir);
 //        test2(ir);
-        test3(ir);
+//        test3(ir);
+        test4(ir);
 
         siw.removeIndex(dir);
 
@@ -33,11 +36,73 @@ public class main {
         System.err.println(msg + " at " + timeStamp);
     }
 
+    private static void test4(IndexReader ir) {
+        ReviewSearch rs = new ReviewSearch(ir);
+
+        ArrayList<String[]> queryTerms = new ArrayList<>();
+        String[] queryTerms1 = {"Healthy", "food", "for", "dogs"};
+        String[] queryTerms2 = {"Healfy", "food", "for", "doggs"};
+        String[] queryTerms3 = {"Health", "fo0", "fr", "cats"};
+        String[] queryTerms4 = {"kat", "foood"};
+        String[] queryTerms5 = {"cat", "and", "dog", "toys"};
+        String[] queryTerms6 = {"toyz", "R", "us"};
+        String[] queryTerms7 = {"pet", "toy"};
+        String[] queryTerms8 = {"how", "to", "pet", "my", "doggy"};
+        String[] queryTerms9 = {"best", "catt", "ood"};
+        String[] queryTerms10 = {"beast", "tois"};
+        queryTerms.add(queryTerms1);
+        queryTerms.add(queryTerms2);
+        queryTerms.add(queryTerms3);
+        queryTerms.add(queryTerms4);
+        queryTerms.add(queryTerms5);
+        queryTerms.add(queryTerms6);
+        queryTerms.add(queryTerms7);
+        queryTerms.add(queryTerms8);
+        queryTerms.add(queryTerms9);
+        queryTerms.add(queryTerms10);
+
+        ArrayList<Vector<String>> queries = new ArrayList<>();
+        for (String[] queryTerm : queryTerms) {
+            Vector<String> query = new Vector<>(Arrays.asList(queryTerm));
+            queries.add(query);
+        }
+
+        for (Vector<String> query : queries) {
+            Enumeration<Integer> res;
+
+            System.out.println(query.toString());
+
+            takeTime(">>> STARTED Vector Space WITHOUT History");
+            res = rs.vectorSpaceSearch(query.elements(), 5, false);
+            takeTime(">>> DONE Vector Space WITHOUT History");
+
+            System.out.println("Found: ");
+            while (res.hasMoreElements()) {
+                System.out.println(res.nextElement());
+            }
+
+            takeTime(">>> STARTED Language Model WITHOUT History");
+            res = rs.languageModelSearch(query.elements(), 0.25, 5, false);
+            takeTime(">>> Done Language Model WITHOUT History");
+
+            System.out.println("Found: ");
+            while (res.hasMoreElements()) {
+                System.out.println(res.nextElement());
+            }
+
+            System.out.println("-------------------------------------------------------");
+        }
+
+    }
+
     private static void test3(IndexReader ir) {
         ReviewSearch rs = new ReviewSearch(ir);
 
-        String correction = rs.findSpellingCorrection("lo", false);
-        System.out.println(correction);
+        String term = "alright";
+//        String correction = rs.findSpellingCorrection(term, false, false);
+//        System.out.println(correction);
+//        ir.qh.save(term);
+//        IndexWriter.writeObject(ir.historyDir, IndexWriter.historyFileName, ir.qh);
     }
 
     private static void test2(IndexReader ir) {
@@ -48,20 +113,20 @@ public class main {
         ReviewSearch rs = new ReviewSearch(ir);
         Enumeration<Integer> res;
 
-        res = rs.vectorSpaceSearch(query.elements(), 5);
+        res = rs.vectorSpaceSearch(query.elements(), 5, false);
         while (res.hasMoreElements()) {
             System.out.println(res.nextElement());
         }
 
-        res = rs.languageModelSearch(query.elements(), 0.25, 5);
+        res = rs.languageModelSearch(query.elements(), 0.25, 5, false);
         while (res.hasMoreElements()) {
             System.out.println(res.nextElement());
         }
 
-        Collection<String> goodProducts = rs.productSearch(query.elements(), 10);
-        for (String product: goodProducts) {
-            System.out.println(product);
-        }
+//        Collection<String> goodProducts = rs.productSearch(query.elements(), 10);
+//        for (String product: goodProducts) {
+//            System.out.println(product);
+//        }
     }
 
     private static void test1(IndexReader ir) {

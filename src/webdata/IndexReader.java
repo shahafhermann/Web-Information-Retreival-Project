@@ -1,6 +1,7 @@
 package webdata;
 
 import webdata.utils.LetterProbability;
+import webdata.utils.QueryHistory;
 import webdata.utils.Utils;
 
 import java.io.*;
@@ -15,12 +16,16 @@ public class IndexReader {
     NGramIndex productNGI;
     LetterProbability tokenLp;
     LetterProbability productLp;
+    QueryHistory qh;
+
+    public String historyDir;
 
     /**
      * Creates an IndexReader which will read from the given directory
      * @param dir The directory to read from.
      */
     public IndexReader(String dir) {
+        this.historyDir = dir + File.separator + "history";
         tokenDict = (Dictionary) readObject(dir, IndexWriter.tokenDictFileName);
         productDict = (Dictionary) readObject(dir, IndexWriter.productDictFileName);
         rd = (ReviewData) readObject(dir, IndexWriter.reviewDataFileName);
@@ -28,6 +33,7 @@ public class IndexReader {
         productNGI = (NGramIndex) readObject(dir, IndexWriter.productNGIFileName);
         tokenLp = (LetterProbability) readObject(dir, IndexWriter.tokenLetterProbabilityFileName);
         productLp = (LetterProbability) readObject(dir, IndexWriter.productLetterProbabilityFileName);
+        qh = (QueryHistory) readObject(historyDir, IndexWriter.historyFileName);
     }
 
     private Object readObject(String dir, String fileName) {

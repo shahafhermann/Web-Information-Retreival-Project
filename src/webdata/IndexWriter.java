@@ -1,6 +1,7 @@
 package webdata;
 
 import webdata.utils.LetterProbability;
+import webdata.utils.QueryHistory;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -21,6 +22,8 @@ public class IndexWriter{
     static final String tokenPostingListFileName = "tokenPostingList";
     static final String tokenLetterProbabilityFileName = "tokenLetterProbabilities";
     static final String productLetterProbabilityFileName = "productLetterProbabilities";
+    static final String historyFileName = "queryHistory";
+
     private final String tokensFileName = "tokenFile";
     private final String productsFileName = "productFile";
     private final String sortedIndicator = "_sorted";
@@ -35,18 +38,9 @@ public class IndexWriter{
      *            created.
      */
     public void write(String inputFile, String dir) {
-        File dirFile = new File(dir);
-        if (dirFile.exists()) {
-            removeFiles(dir);
-        } else {  // Create it
-            try{
-                dirFile.mkdir();
-            }
-            catch(SecurityException e){
-                System.err.println(e.getMessage());
-                System.exit(1);
-            }
-        }
+        createDir(dir);
+        String historyDir = dir + File.separator + "history";
+        createDir(historyDir);
 
         String sortedTokensFilePath = dir + File.separator + tokensFileName + sortedIndicator;
         String sortedProductsFilePath = dir + File.separator + productsFileName + sortedIndicator;
@@ -94,8 +88,17 @@ public class IndexWriter{
         LetterProbability productLp = new LetterProbability(sorter.getProductIdsArray());
         writeObject(dir, tokenLetterProbabilityFileName, tokenLp);
         writeObject(dir, productLetterProbabilityFileName, productLp);
+
+        QueryHistory qh = new QueryHistory();
+        writeObject(historyDir, historyFileName, qh);
     }
 
+    /**
+     * Write a Serializable object.
+     * @param dir The directory to write to
+     * @param fileName The file name to write to
+     * @param o The object to write
+     */
     public static void writeObject(String dir, String fileName, Object o) {
         try {
             ObjectOutputStream writer = new ObjectOutputStream(new FileOutputStream(dir + File.separator + fileName));
@@ -108,6 +111,45 @@ public class IndexWriter{
         }
     }
 
+    /**
+     * Create a new directory. If already exists, delete it's contents.
+     * @param dir The directory to create.
+     */
+    private void createDir(String dir) {
+        File dirFile = new File(dir);
+        if (dirFile.exists()) {
+            purgeDirectory(dirFile);
+        } else {  // Create it
+            try{
+                dirFile.mkdir();
+            }
+            catch(SecurityException e){
+                System.err.println(e.getMessage());
+                System.exit(1);
+            }
+        }
+    }
+
+    /**
+     * Recursively delete all files and all subdirectories of the given directory
+     * @param dir
+     */
+    private void purgeDirectory(File dir) {
+        File[] entries = dir.listFiles();
+        if (entries != null) {
+            for(File file: entries){
+                if (file.isDirectory())
+                    purgeDirectory(file);
+                file.delete();
+            }
+        }
+    }
+
+    /**
+     * Create temporary directory for sorting
+     * @param dir Directory  to create
+     * @return The directory's name
+     */
     private String createTempDir(String dir) {
         String tmpDirName = dir + File.separator + "tmp";
         removeIndex(tmpDirName);
@@ -131,38 +173,8 @@ public class IndexWriter{
     public void removeIndex(String dir) {
         File dirFile = new File(dir);
         if (dirFile.exists()) {
-            String[] entries = dirFile.list();
-            if (entries != null) {
-                for(String s: entries){
-                    File currentFile = new File(dirFile, s);
-                    currentFile.delete();
-                }
-            }
+            purgeDirectory(dirFile);
             dirFile.delete();
-        }
-    }
-
-    /**
-     * Delete all index files (and only the files).
-     * @param dir The directory to remove the index from.
-     */
-    private void removeFiles(String dir) {
-        deleteFile(dir, tokenDictFileName);
-        deleteFile(dir, productDictFileName);
-        deleteFile(dir, reviewDataFileName);
-        deleteFile(dir, productPostingListFileName);
-        deleteFile(dir, tokenPostingListFileName);
-    }
-
-    /**
-     * Delete a single file
-     * @param dir The directory to delete from
-     * @param fileName The file name
-     */
-    private void deleteFile(String dir, String fileName) {
-        File f = new File(dir + File.separator + fileName);
-        if (f.exists()) {
-            f.delete();
         }
     }
 
