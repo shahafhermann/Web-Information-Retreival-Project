@@ -578,10 +578,9 @@ public class ReviewSearch {
      * If there's a tie, choose at random.
      * If none was found, use noisy channel instead.
      * @param dldTerms All terms that had been processed with dl distance and have a good fit.
-     * @param isProduct Indicate if this method should refer to the product or token index.
      * @return A string of the best correction.
      */
-    private String findInHistory(ArrayList<DLDistance> dldTerms, boolean isProduct) {
+    private String findInHistory(ArrayList<DLDistance> dldTerms) {
         TreeMap<String, Integer> history = ir.qh.getHistory();
 
         String bestFit = "";
@@ -627,7 +626,7 @@ public class ReviewSearch {
         if (historySearch) {
             // Find if any of the potential corrections was queried in the past and how many times,
             // and give those words higher priority.
-            bestCorrection = findInHistory(dldTerms, isProduct);
+            bestCorrection = findInHistory(dldTerms);
 
         } else {
             // For each word w, calculate P(w).
@@ -640,15 +639,21 @@ public class ReviewSearch {
         return bestCorrection;
     }
 
+    /**
+     * Correct the given query. This method changes the input.
+     * @param query The query to correct
+     * @param searchHistory Indicates if the correction should search the history.
+     */
     private void correctQuery(List<String> query, boolean searchHistory) {
         for (int i = 0; i < query.size(); ++i) {
             String term = query.get(i);
-            if (!validSpelling(term)) {
+            if (!validSpelling(term) || searchHistory) {
                 String correction = findSpellingCorrection(term, false, searchHistory);
                 correction = correction.isEmpty() ? term : correction;
                 query.set(i, correction);
 
-                System.out.println("Term: '" + term + "' was corrected to: '" + correction + "'.");
+                if (!correction.equals(term)) System.out.println("Word: '" + term + "' was corrected to: '" + correction + "'.");
+
             }
         }
 
