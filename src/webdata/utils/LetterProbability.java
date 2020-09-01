@@ -4,6 +4,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
+/**
+ * A class for defining the probabilities for certain letters and errors.
+ */
 public class LetterProbability implements Serializable {
 
     //---------------------------------------------------//
@@ -30,11 +33,18 @@ public class LetterProbability implements Serializable {
 
     private int alphabetSize = 0;
 
+    /**
+     * Constructor
+     * @param terms
+     */
     public LetterProbability(ArrayList<String> terms) {
         buildMatrices();
         countOccurrences(terms);
     }
 
+    /**
+     * Build the actual confusion matrices out of the hard-coded arrays
+     */
     private void buildMatrices() {
         for (int i = 0; i < del_keys.length; ++i) {
             delMat.put(del_keys[i], del_vals[i]);
@@ -53,6 +63,10 @@ public class LetterProbability implements Serializable {
         }
     }
 
+    /**
+     * Count letter occurrences in the given list of terms, and the alphabet size.
+     * @param terms
+     */
     private void countOccurrences(ArrayList<String> terms) {
         for (String term : terms) {
             for (int i = 0; i < term.length() - 1; ++i) {
@@ -74,6 +88,9 @@ public class LetterProbability implements Serializable {
         }
     }
 
+    //---------------------------------------------------//
+    //********************* Getters *********************//
+    //---------------------------------------------------//
     public TreeMap<String, Integer> getDelMat() {
         return delMat;
     }

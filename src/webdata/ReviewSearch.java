@@ -111,6 +111,7 @@ public class ReviewSearch {
      * given query, using the vector space ranking function lnn.ltc (using the
      * SMART notation)
      * The list should be sorted by the ranking
+     * @param searchHistory Indicates if the spelling correction should rely on a history search
      */
     public Enumeration<Integer> vectorSpaceSearch(Enumeration<String> query, int k, boolean searchHistory) {
         ArrayList<String> queryList = new ArrayList<>();
@@ -198,6 +199,7 @@ public class ReviewSearch {
      * given query, using the language model ranking function, smoothed using a
      * mixture model with the given value of lambda
      * The list should be sorted by the ranking
+     * @param searchHistory Indicates if the spelling correction should rely on a history search
      */
     public Enumeration<Integer> languageModelSearch(Enumeration<String> query, double lambda, int k,
                                                     boolean searchHistory) {
@@ -261,6 +263,7 @@ public class ReviewSearch {
      * 7.	Normalize the above result for each product by the sum of all results.
      * 8.	Combine the weights calculated in steps 3 and 7 and normalize.
      * 9.	Return top k.
+     * @param searchHistory Indicates if the spelling correction should rely on a history search
      */
     public Collection<String> productSearch(Enumeration<String> query, int k, boolean searchHistory) {
         // Find all relevant reviews according to the query

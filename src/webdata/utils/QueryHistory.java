@@ -29,6 +29,9 @@ public class QueryHistory implements Serializable {
         history.put(term, count + 1);
     }
 
+    /**
+     * Get history
+     */
     public TreeMap<String, Integer> getHistory() {
         return history;
     }
